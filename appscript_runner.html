@@ -33,23 +33,62 @@ html, body {
 ></iframe>
 <div id="log" style="display:none"></div>
 <script>
-//https://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
-const getParameterByName = function(name, url) {
-  if (!url) url = window.location.href;
-  name = name.replace(/[\[\]]/g, '\\$&');
-  let regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
-  results = regex.exec(url);
-  if (!results) return null;
-  if (!results[2]) return '';
-  return decodeURIComponent(results[2].replace(/\+/g, ' '));
-};
+(function() {
+  //https://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
+  const getParameterByName = function(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, '\\$&');
+    let regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+    results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, ' '));
+  };
 
-(function(){
   let appId = getParameterByName("appid");
   let title = getParameterByName("title");
   
   let log = document.getElementById("log");
-  let iframe = document.getElementById("webappContainer")
+  let iframe = document.getElementById("webappContainer");
+  let initCookies = getParameterByName("cookies");
+  
+  
+  //https://stackoverflow.com/questions/2144386/how-to-delete-a-cookie
+  function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+      let date = new Date();
+      date.setDate(date.getDate() + days);
+      expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "")  + expires + "; SameSite=None; path=/; Secure";
+  }
+  function getCookie(name) {
+    let nameEQ = name + "=";
+    let ca = document.cookie.split(';');
+    for(let i=0;i < ca.length;i++) {
+        let c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+  }
+  function eraseCookie(name) {
+    document.cookie = name + '=; Max-Age=0;';  
+  }
+
+  try {
+    let arrCookies = initCookies.split(",");
+	
+	arrCookies.forEach(function(name) {
+	  if (getCookie(appId + "_" + name) == null) {
+	    setCookie(appId + "_" + name, "", 1);
+	  }
+	});
+  } catch(e) {
+	log.appendChild(document.createTextNode("failed to init cookies."));
+    log.appendChild(document.createElement("br"));
+  }
   
   if( appId==null || appId.length==0 ) {
     log.appendChild(document.createTextNode("Failed to launch app script, appid not found/defined in query parameter."));
